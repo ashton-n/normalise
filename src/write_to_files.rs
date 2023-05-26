@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::fs;
-use std::io::{LineWriter, Write};
+use std::io::{Write};
 use std::io;
-use std::path::{Path, PathBuf};
+use std::path::{PathBuf};
 
 pub fn write_to_bin(
     write_location: &PathBuf,
@@ -30,17 +30,17 @@ pub fn write_to_bin(
         //});
     //});
 
-    data.iter().for_each(|(indiv_idx, indiv_rg_pairs)| {
-                    println!("\nidx: {:?}", indiv_idx);
-                    //indiv_rg_pairs.iter().for_each(|(snp_idx, snp_pairs)| {
-                        (0..indiv_rg_pairs.len()).for_each(|x| {
-                            let (green, red) =  indiv_rg_pairs.get(&x).unwrap();
-                            println!("{:?} {:?} {:?}", x, green, red);
-                            file.write(&[*green, *red]).unwrap();
-                            }
-                        );
-                    //})
-                });
+    (0..data.len()).for_each(|indiv_idx| { 
+        
+        let indiv_rg_pairs = data.get(&indiv_idx).unwrap(); 
+        //println!("\nidx: {:?}", indiv_idx + 1);
+        (0..indiv_rg_pairs.len()).for_each(|x| {
+            let (green, red) =  indiv_rg_pairs.get(&x).unwrap();
+            //println!("{:?} {:?} {:?}", x + 1, green, red);
+            file.write(&[*green, *red]).unwrap();
+            }
+        );
+    });
     
     
     file.flush()?;

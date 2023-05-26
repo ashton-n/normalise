@@ -1,10 +1,10 @@
 use std::ffi::OsStr;
 //use std::io::{BufRead, Error, Result, self};
 use std::io;
-use std::error;
-use std::fs::{read_dir, ReadDir};
+
+use std::fs::{read_dir};
 use std::path::{Path, PathBuf};
-use std::collections::HashMap;
+
 
 
 pub fn get_file_pathes(input_dir: &Path) -> io::Result<Vec<(PathBuf, PathBuf)>> {    
@@ -14,6 +14,7 @@ pub fn get_file_pathes(input_dir: &Path) -> io::Result<Vec<(PathBuf, PathBuf)>> 
 
     let mut data_paths = paths.into_iter()
                               .filter(|path| path.extension() == Some(OsStr::new("dat")))
+                              .filter(|path| path.extension() != None)
                               .filter(|path| path
                                 .file_stem()
                                 .and_then(|stem| stem.to_str())
@@ -22,6 +23,7 @@ pub fn get_file_pathes(input_dir: &Path) -> io::Result<Vec<(PathBuf, PathBuf)>> 
         
                               .collect::<Vec<PathBuf>>();
 
+    data_paths.sort();
     let (green, red): (Vec<_>, Vec<_>) = data_paths.into_iter()
                                                    .partition(|path| path
                                                         .file_stem()
@@ -39,7 +41,7 @@ pub fn get_file_pathes(input_dir: &Path) -> io::Result<Vec<(PathBuf, PathBuf)>> 
 
  
 // stores the contents of a file in a vector
-pub fn read_file_to_hashmap(
+/*pub fn read_file_to_hashmap(
     data_source: &Path,
 ) -> Result<HashMap<usize, u8>, Box<dyn error::Error>> {
 
@@ -48,7 +50,7 @@ pub fn read_file_to_hashmap(
     let data = data.into_iter().enumerate().collect::<HashMap<usize, u8>>();
 
     Ok(data)
-}
+}*/
 /*
 //counts the number of lines in a file
 pub fn count_lines(

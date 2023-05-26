@@ -1,8 +1,7 @@
 use std::env;
-use std::ffi::OsStr;
 use std::fmt::Error;
-use std::fs::read_dir;
-use std::path::{Path, PathBuf};
+
+use std::path::{PathBuf};
 //use std::time::Instant;
 //mod bit_ops;
 mod data_ops;
@@ -41,43 +40,19 @@ fn main() {
     //println!("{:#?}", sample_pair_paths);
     //println!("{:#?}", sample_pair_paths.len());
     // calculate per 
-    println!("test path: {:?}\n", sample_pair_paths[3]);
-    let test = data_ops::normalise_sample(&sample_pair_paths[3]).unwrap();
+    //println!("test path: {:?}\n", sample_pair_paths[3]);
+    //let test = data_ops::normalise_sample(&sample_pair_paths[3]).unwrap();
 
-    /*let data = sample_pair_paths.iter()
+    //println!("test path: {:?}\n", sample_pair_paths[3]);
+    let data = sample_pair_paths.into_iter()
                                 .enumerate()
-                                .map(|(idx, path_pair)| {
-                                    // CAREFUL: idx needs to be sequential using MPI
-                                    (idx, data_ops::normalise_sample(path_pair).unwrap()) 
+                                .map(|(idx, green_red_paths)| {
+                                    (idx, data_ops::normalise_sample(&green_red_paths).unwrap())
                                 })
-                                .collect::<HashMap<usize, HashMap<usize, (u8, u8)>>>();*/
+                                .collect::<HashMap<usize, HashMap<usize, (u8, u8)>>>(); 
 
-
-    //println!("{:?}",data);
-
-    let data_test: HashMap<usize, HashMap<usize,(u8, u8)>> = vec![(0_usize, test)].into_iter().collect();
-    let status = write_to_files::write_to_bin(&output_filename, data_test).unwrap();
+    let status = write_to_files::write_to_bin(&output_filename, data).unwrap();
     println!("{:?}", status);
     
-    //data_test.iter().for_each(|(indiv_idx, indiv_val)| {
-    //    println!("{:#?}", indiv_val.get(&0));
-    //});
-
-    /*let nested_map = HashMap::from([
-        ("key1", HashMap::from([
-            ("nested_key1", "value1"),
-            ("nested_key2", "value2"),
-        ])),
-        ("key2", HashMap::from([
-            ("nested_key3", "value3"),
-            ("nested_key4", "value4"),
-        ])),
-    ]);*/
-
-    //let transposed_data = data_ops::transpose(data_test).unwrap();
-    //println!("{:?}", transposed_data);
-    //transposed_data
-
-    //println!("{:?}", o);
     
 }
