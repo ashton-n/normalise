@@ -1,7 +1,7 @@
 
 use std::path::{PathBuf};
 use std::error;
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 
 use rayon::prelude::*;
 
@@ -109,7 +109,7 @@ pub fn get_min_max<T: PartialOrd + Copy>(value_map: &HashMap<usize, T>, n: usize
     indices.sort_by(|&a, &b| {
         let cmp = value_map[&a].partial_cmp(&value_map[&b]).unwrap_or(std::cmp::Ordering::Equal);
         if cmp == std::cmp::Ordering::Equal {
-            a.cmp(&b)
+            b.cmp(&a)
         } else {
             cmp
         }
@@ -135,7 +135,7 @@ pub fn normalise_sample(path: &(PathBuf, PathBuf)) -> Result<HashMap<usize, (u8,
 
     let ratio = green.par_iter()
                      .zip(red.par_iter())
-                     .map(|(g, r)| *g as f32 / *r as f32)
+                     .map(|(g, r)| *r as f32 / *g as f32)
                      .collect::<Vec<f32>>();
     // Convert vectors to HashMap for easier indexing
     let mut green = green.into_par_iter().enumerate().collect::<HashMap<usize, u8>>();
@@ -217,6 +217,30 @@ pub fn normalise_sample(path: &(PathBuf, PathBuf)) -> Result<HashMap<usize, (u8,
     //println!("{:#?}", data); //correct
     Ok(data)
 
+}
+// Converts to hashmap then to vector of u8
+pub fn decompose(data: HashMap<usize, HashMap<usize, (u8, u8)>>) -> Vec<u8> {
+    
+    let data_to_vec = (0..data.len()).into_iter()
+                   .map(|snp_idx| {
+                    let sub_hash_map = data.get(&snp_idx).unwrap();
+                    (0..sub_hash_map.len()).into_iter()
+                                            .map(|sample_idx| {
+                                                let (green, red) = sub_hash_map.get(&sample_idx).unwrap();
+                                                vec![*green, *red]
+                                            })
+                                            .collect::<Vec<Vec<u8>>>()
+
+                   })
+                   .collect::<Vec<Vec<Vec<u8>>>>();
+    //
+    let decomposed_data = data_to_vec.into_iter()
+                                     .map(|indiv_vec| {
+                                        indiv_vec.into_iter().flatten().collect::<Vec<_>>()
+                                     })
+                                     .flatten()
+                                     .collect::<Vec<_>>();
+    decomposed_data
 }
 
 /*pub fn transpose(data: HashMap<usize, HashMap<usize, (u8, u8)>>) 
