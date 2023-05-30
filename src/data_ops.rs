@@ -1,109 +1,10 @@
 
 use std::path::{PathBuf};
 use std::error;
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap};
 
 use rayon::prelude::*;
 
-
-
-
-
-/*pub fn get_min_max(data: &Vec<u8>, n: usize) -> Result<Vec<u8>, Box<dyn error::Error>> {
-
-    let mut data = data.clone();
-    data.sort_by(|a, b| a.partial_cmp(b).unwrap());
-    let mut min = data[0..n].to_vec();
-    let max = data[(data.len()-n)..].to_vec();
-    min.extend(max);
-    Ok(min)
-
-}*/
-
-/*pub fn get_min_max_f32(data: &Vec<f32>, n: usize) -> Result<Vec<f32>, Box<dyn error::Error>> {
-
-    let mut data = data.clone();
-
-    data.sort_by(|a, b| a.partial_cmp(b).unwrap());
-
-    let mut min = data[0..n].to_vec();
-    let max = data[(data.len()-n)..].to_vec();
-    min.extend(max);
-    Ok(min)
-
-}*/
-//--------------------------------
-/*pub fn get_min_max_u8(value_map: &HashMap<usize, u8>, n: usize) -> Result<Vec<usize>, Box<dyn error::Error>> {
-    let mut indices: Vec<usize> = value_map.keys().copied().collect();
-    indices.sort_by(|&a, &b| value_map[&a].cmp(&value_map[&b]));
-    let mut idxs = indices[0..n].to_vec(); //min indices
-    let max = indices[(indices.len()-n)..].to_vec();
-    idxs.extend(max);
-    Ok(idxs)
-}
-
-pub fn get_min_max_f32(value_map: &HashMap<usize, f32>, n: usize) -> Result<Vec<usize>, Box<dyn error::Error>> {
-    let mut indices: Vec<usize> = value_map.keys().copied().collect();
-    indices.sort_by(|&a, &b| {
-        value_map[&a].partial_cmp(&value_map[&b]).unwrap_or(std::cmp::Ordering::Equal)
-    });
-    let mut idxs = indices[0..n].to_vec();
-    let max = indices[(indices.len()-n)..].to_vec();
-    idxs.extend(max);
-    Ok(idxs)
-}*/
-
-/*pub fn get_min_max_u8(value_map: &HashMap<usize, u8>, n: usize) -> Result<Vec<usize>, Box<dyn error::Error>> {
-    let mut indices: Vec<usize> = value_map.keys().copied().collect();
-    indices.sort_by(|&a, &b| {
-        let cmp = value_map[&a].partial_cmp(&value_map[&b]).unwrap_or(std::cmp::Ordering::Equal);
-        if cmp == std::cmp::Ordering::Equal {
-            // In case of tie, compare indices in reverse order
-            b.cmp(&a)
-        } else {
-            cmp
-        }
-    });
-    let max = indices[(indices.len()-n)..].to_vec();
-    indices.sort_by(|&a, &b| {
-        let cmp = value_map[&a].partial_cmp(&value_map[&b]).unwrap_or(std::cmp::Ordering::Equal);
-        if cmp == std::cmp::Ordering::Equal {
-            // In case of tie, compare indices in reverse order
-            b.cmp(&a)
-        } else {
-            cmp
-        }
-    });
-    let mut idxs = indices[0..n].to_vec();
-    idxs.extend(max);
-    Ok(idxs)
-}
-
-pub fn get_min_max_f32(value_map: &HashMap<usize, f32>, n: usize) -> Result<Vec<usize>, Box<dyn error::Error>> {
-    let mut indices: Vec<usize> = value_map.keys().copied().collect();
-    indices.sort_by(|&a, &b| {
-        let cmp = value_map[&a].partial_cmp(&value_map[&b]).unwrap_or(std::cmp::Ordering::Equal);
-        if cmp == std::cmp::Ordering::Equal {
-            // In case of tie, compare indices in reverse order
-            a.cmp(&b)
-        } else {
-            cmp
-        }
-    });
-    let max = indices[(indices.len()-n)..].to_vec();
-    indices.sort_by(|&a, &b| {
-        let cmp = value_map[&a].partial_cmp(&value_map[&b]).unwrap_or(std::cmp::Ordering::Equal);
-        if cmp == std::cmp::Ordering::Equal {
-            // In case of tie, compare indices in reverse order
-            a.cmp(&b)
-        } else {
-            cmp
-        }
-    });
-    let mut idxs = indices[0..n].to_vec();
-    idxs.extend(max);
-    Ok(idxs)
-}*/
 pub fn get_min_max<T: PartialOrd + Copy>(value_map: &HashMap<usize, T>, n: usize) -> Result<Vec<usize>, Box<dyn error::Error>> {
     let mut indices: Vec<usize> = value_map.keys().copied().collect();
     indices.sort_by(|&a, &b| {
@@ -127,6 +28,7 @@ pub fn normalise_sample(path: &(PathBuf, PathBuf)) -> Result<HashMap<usize, (u8,
     let green = std::fs::read(&path.0).expect("Error reading green for indiv...");
 
     //println!("\n");
+    //println!("Green len: {:#?}", green.len());
     //println!("{:#?}", path);
     //println!("\n");
     //green.iter().enumerate().for_each(|(idx, val)| print!("({:?}: {:?}) ", idx, val)); //correct
@@ -218,43 +120,71 @@ pub fn normalise_sample(path: &(PathBuf, PathBuf)) -> Result<HashMap<usize, (u8,
     Ok(data)
 
 }
-// Converts to hashmap then to vector of u8
+// Converts hashmap to vector of u8 while transposing the data
 pub fn decompose(data: HashMap<usize, HashMap<usize, (u8, u8)>>) -> Vec<u8> {
     
-    let data_to_vec = (0..data.len()).into_iter()
-                   .map(|snp_idx| {
-                    let sub_hash_map = data.get(&snp_idx).unwrap();
-                    (0..sub_hash_map.len()).into_iter()
-                                            .map(|sample_idx| {
-                                                let (green, red) = sub_hash_map.get(&sample_idx).unwrap();
+    let sub_hash_len = data.get(&0).unwrap().len();            
+    let data_to_vec = (0..sub_hash_len).into_iter()
+                                       .map(|snp_idx| {
+                                            (0..data.len()).into_iter().map(|indiv_idx| {
+                                                let (green, red) = data.get(&indiv_idx)
+                                                                       .unwrap()
+                                                                       .get(&snp_idx)
+                                                                       .unwrap();
                                                 vec![*green, *red]
                                             })
-                                            .collect::<Vec<Vec<u8>>>()
-
-                   })
-                   .collect::<Vec<Vec<Vec<u8>>>>();
-    //
-    let decomposed_data = data_to_vec.into_iter()
-                                     .map(|indiv_vec| {
-                                        indiv_vec.into_iter().flatten().collect::<Vec<_>>()
-                                     })
-                                     .flatten()
-                                     .collect::<Vec<_>>();
-    decomposed_data
+                                                                       .flatten()
+                                                                       .collect::<Vec<u8>>()
+                                        })
+                                        .flatten()
+                                        .collect::<Vec<u8>>();
+                                     
+    data_to_vec
+}
+pub fn hash_to_vec(data: HashMap<usize, HashMap<usize, (u8, u8)>>) -> Vec<u8> {
+    
+    let sub_hash_len = data.get(&0).unwrap().len();  
+    //indiv_idx
+    //snp_idx  
+    let data_to_vec = (0..data.len()).into_iter()
+                                       .map(|indiv_idx| {
+                                            (0..sub_hash_len).into_iter().map(|snp_idx| {
+                                                let (green, red) = data.get(&indiv_idx)
+                                                                       .unwrap()
+                                                                       .get(&snp_idx)
+                                                                       .unwrap();
+                                                vec![*green, *red]
+                                            })
+                                                                       .flatten()
+                                                                       .collect::<Vec<u8>>()
+                                        })
+                                        .flatten()
+                                        .collect::<Vec<u8>>();
+                                     
+    data_to_vec
 }
 
-/*pub fn transpose(data: HashMap<usize, HashMap<usize, (u8, u8)>>) 
-    -> Result< Vec<Vec<(u8, u8)>>, Box<dyn error::Error> > {
+pub fn vec_transpose(data: Vec<u8>, no_snps: usize) -> Vec<u8> {
+    let data = data.chunks(2).map(|x| x.to_vec()).collect::<Vec<Vec<u8>>>();
+    let data = data.chunks_exact(no_snps).map(|x| x.to_vec()).collect::<Vec<Vec<Vec<u8>>>>();
 
-    let transposed_data = (0..data.len()).into_iter()
-                                         .map(|snp_idx| {
-                                            //(data.get(&idx)).get(idx)
-                                            data.iter().map(|(_sample_idx, norm_sample)| {
-                                                *norm_sample.get(&snp_idx).unwrap()//.unwrap_or_else(|| panic!("error on normalised data at SNP {:?} value: {:?}", &snp_idx, norm_sample))
-                                            }).collect::<Vec<(u8, u8)>>()  
-                                         })
-                                         .collect::<Vec<Vec<(u8, u8)>>>();
+    let trans_vec = (0..no_snps)
+        .flat_map(|snp_idx| {
+            data.iter().map(move |all_indiv_snps| {
+                all_indiv_snps[snp_idx].clone()
+            })
+        })
+        .flatten()
+        .collect::<Vec<u8>>();
+    
+    trans_vec
+}
 
-    Ok(transposed_data)
-}*/
-
+pub fn normalise_data_from_file_chunks(chunks: Vec<&[(PathBuf, PathBuf)]>, rank: i32) -> HashMap<usize, HashMap<usize, (u8, u8)>> {
+    chunks[rank as usize].into_iter()
+                         .enumerate()
+                         .map(|(idx, green_red_paths)| {
+                             (idx, normalise_sample(&green_red_paths).unwrap())
+                         })
+                         .collect::<HashMap<usize, HashMap<usize, (u8, u8)>>>()     
+}
