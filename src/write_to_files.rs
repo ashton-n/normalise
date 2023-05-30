@@ -8,13 +8,6 @@ pub fn write_hashmap_to_bin(
     write_location: &PathBuf,
     data: HashMap<usize, HashMap<usize, (u8, u8)>>,
 ) -> io::Result<String> {
-    
-    // Needs to be done like this
-    //let file_path = std::env::current_dir().unwrap();
-
-    // creates a file
-    //let file = std::fs::File::create("./test").unwrap();
-
     let mut file = fs::OpenOptions::new().write(true)
                                          .create(true)
                                          .open(write_location)
