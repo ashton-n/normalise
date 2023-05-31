@@ -19,5 +19,5 @@ done
 
 for ((i = 0; i < max_proc; i++))
 do
-    echo "Execution time: ${times[$i]} speed up: ${speed_up[$i]}"
+    echo "Execution time: ${times[$i]}ms speed up: ${speed_up[$i]}"
 done
