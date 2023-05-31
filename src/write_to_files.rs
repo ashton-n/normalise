@@ -1,10 +1,11 @@
-use std::collections::HashMap;
-use std::fs;
-use std::io::{Write};
+use std::fs::{OpenOptions};
+use std::io::{Write, BufWriter};
 use std::io;
 use std::path::{PathBuf};
 
-pub fn write_hashmap_to_bin(
+
+
+/*pub fn write_hashmap_to_bin(
     write_location: &PathBuf,
     data: HashMap<usize, HashMap<usize, (u8, u8)>>,
 ) -> io::Result<String> {
@@ -28,9 +29,9 @@ pub fn write_hashmap_to_bin(
     
     file.flush()?;
     Ok(String::from(format!("Write Complete.")))
-}
+}*/
 
-pub fn write_vec_to_bin(
+/*pub fn write_vec_to_bin(
     write_location: &PathBuf,
     data: Vec<u8>,
 ) -> io::Result<String> {
@@ -46,4 +47,44 @@ pub fn write_vec_to_bin(
     
     file.flush()?;
     Ok(String::from(format!("Write Complete.")))
+}*/
+
+/*pub fn write_vec_to_bin(write_location: &PathBuf, data: Vec<u8>) -> io::Result<String> {
+    let file = Mutex::new(BufWriter::new(
+        OpenOptions::new()
+            .write(true)
+            .create(true)
+            .open(write_location)
+            .expect("output file path incorrect")
+    ));
+
+    data.into_par_iter().for_each(|x| {
+        let mut locked_file = file.lock().unwrap();
+        locked_file.write(&[x]).unwrap();
+    });
+
+    let mut locked_file = file.lock().unwrap();
+    locked_file.flush()?;
+
+    Ok(String::from("Write Complete."))
+}*/
+
+pub fn write_vec_to_bin(write_location: &PathBuf, data: Vec<u8>) -> io::Result<String> {
+    let mut file = BufWriter::new(
+        OpenOptions::new()
+            .write(true)
+            .create(true)
+            .open(write_location)
+            .expect("output file path incorrect")
+    );
+
+    data.into_iter().for_each(|x| {
+        //let mut locked_file = file.lock().unwrap();
+        file.write(&[x]).unwrap();
+    });
+
+    //let mut locked_file = file.lock().unwrap();
+    file.flush()?;
+
+    Ok(String::from("Write Complete."))
 }

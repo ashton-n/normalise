@@ -6,7 +6,7 @@ mod data_ops;
 mod read_from_files;
 mod write_to_files;
 use mpi::traits::*;
-
+use rayon::prelude::*;
 // reads in parameters passed to programme
 fn read_term_args() -> Result<(PathBuf, PathBuf), Box<dyn std::error::Error>> {
     let args: Vec<String> = env::args().collect();
@@ -26,9 +26,8 @@ fn read_term_args() -> Result<(PathBuf, PathBuf), Box<dyn std::error::Error>> {
 
 fn main() {
     // read in parameters passed to the programme
-    let (input_dir, output_filename) = read_term_args().unwrap();
+    let (input_dir, output_filename) = read_term_args().expect("WHAT!");
     
-
     // get the paths of the files to be read
     let mut sample_pair_paths = read_from_files::get_file_pathes(&input_dir).unwrap();
     
@@ -57,8 +56,8 @@ fn main() {
     }
 
     // split the pathes of the files to be read into chunks
-    // so that each process can read in its own chunk of data
-    // and store the remainder in a separate variable
+    // so that each process can read in its own chunk of data.
+    // and store the remainder data in a separate variable
     // so that it can be processed by the root process later
     let (chunks, remainder) = if sample_pair_paths.len() % count != 0 {
         let remainder = sample_pair_paths.remove(sample_pair_paths.len()-1);
@@ -74,15 +73,20 @@ fn main() {
                                       .collect::<Vec<_>>();
         (chunks, None)
     };
+    let start = Instant::now();
     // let each rank process its chunk of data
     if world.rank() == root_rank {
+        
         // read in the data from the files and normalise it so that each SNP is represented by a u8
         // and each sample is represented by a vector of u8's and store it in a nested hashmap
         let data = data_ops::normalise_data_from_file_chunks(chunks, rank);
+        
         // get the number of individuals
-        let snp_total = data[&0].len();
+        let snp_total = data[0].len();
+        
         // convert data into a vector of u8's
-        let data_as_vec = data_ops::hash_to_vec(data);
+        //let data_as_vec = data_ops::hash_to_vec(data);
+        let data_as_vec = data.into_iter().flatten().flatten().collect::<Vec<u8>>();
 
         // define an appropriately sized vector to store the gathered data
         let mut processed_data = vec![0u8; data_as_vec.len()*count];
@@ -90,13 +94,14 @@ fn main() {
         // gather data from all processes into the root process
         root_process.gather_into_root(&data_as_vec[..], &mut processed_data[..]);
 
-        // If data is not evenly divisible by the number of processes, the root process will have
-        // a remainder of data. This data is precessed and appended to the end of the processed data
-        // vector after the gather operation 
+        // the root process will have
+        // remainder data. That remainder data is captured here   
         let processed_data = if remainder.is_some() {
             let remainder = vec![vec![remainder.unwrap()]];
             let remainder = data_ops::normalise_data_from_file_chunks(remainder, rank);
-            let mut remainder = data_ops::hash_to_vec(remainder);
+            let mut remainder = remainder.into_par_iter().flatten().flatten().collect::<Vec<u8>>();
+            
+          
             processed_data.append(&mut remainder);
             processed_data
         } else {
@@ -105,17 +110,16 @@ fn main() {
 
         // transpose the data so that each row is a sample and each column is a SNP
         let processed_data = data_ops::vec_transpose(processed_data, snp_total);
-
+        
         // write the processed data to a binary file
         write_to_files::write_vec_to_bin(&output_filename, processed_data).unwrap();
-
+        println!("Completed in: {:?}", start.elapsed());
     } else {
-        println!("Rank: {:?} {:#?}", rank, chunks[rank as usize]);
         // let each rank process its chunk
         let data = data_ops::normalise_data_from_file_chunks(chunks, rank);
         
         // convert data from a nested hashmap to a vector of u8's
-        let data_as_vec = data_ops::hash_to_vec(data);
+        let data_as_vec = data.into_iter().flatten().flatten().collect::<Vec<u8>>();
         
         // gather data from all processes into the root process
         root_process.gather_into(&data_as_vec[..]);
