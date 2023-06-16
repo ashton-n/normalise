@@ -27,4 +27,3 @@ pub fn read_term_args() -> Result<(PathBuf, PathBuf), Box<dyn std::error::Error>
         Ok((input_dir, output_filename))
     } 
 }
-

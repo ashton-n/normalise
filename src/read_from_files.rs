@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 pub fn get_file_pathes(input_dir: &Path) -> io::Result<Vec<(PathBuf, PathBuf)>> {    
     // read in all files in the input directory
     let entries = read_dir(input_dir).expect("read_dir call failed");
-    
+
     // unwrap paths from entries into a vector of PathBufs
     let paths = entries.map(|x| x.unwrap().path()).collect::<Vec<PathBuf>>();
 
@@ -25,7 +25,7 @@ pub fn get_file_pathes(input_dir: &Path) -> io::Result<Vec<(PathBuf, PathBuf)>> 
 
     // sort the paths so that the green and red files are next to each other
     data_paths.sort();
-    
+
     // split the paths into two vectors, one for green and one for red
     let (green, red): (Vec<PathBuf>, Vec<PathBuf>) = data_paths.into_iter()
                                                    .partition(|path| path
@@ -77,4 +77,11 @@ pub fn portion_input_data (mut sample_pair_paths: Vec<(PathBuf, PathBuf)>, num_p
           // return the chunks and no remainder
           (chunks, None)
       }
+}
+
+#[test]
+fn test_get_file_pathes() {
+    let input_dir = PathBuf::from("unit_test_data");
+    let file_pathes = get_file_pathes(&input_dir).unwrap();
+    assert_eq!(file_pathes.len(), 4);
 }

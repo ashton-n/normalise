@@ -29,7 +29,7 @@ pub fn get_min_max_v<T: PartialOrd + Copy + Sync, V: AsRef<[T]>>(value_map: V, n
     let min_indices = indices[0..n].to_vec();
     let max_indices = indices[(indices.len() - n)..].to_vec();
 
-    // return the indices
+    // return the indicesmin_indices
     Ok(min_indices.into_iter().chain(max_indices.into_iter()).collect())    
 }
 
@@ -151,4 +151,64 @@ pub fn normalise_data_from_file_chunks(chunks: Vec<Vec<(PathBuf, PathBuf)>>, ran
                              normalise_sample(&green_red_paths).expect("Error normalising sample...")
                          })
                          .collect::<Vec<Vec<Vec<u8>>>>()     
+}
+
+#[test]
+fn test_min_max_v() {
+    let data = vec![1, 2, 3, 4, 5, 6, 7, 8, 9];
+    let indices = get_min_max_v(&data, 3).expect("Error getting min max...");
+    assert_eq!(indices.len(), 6);
+    assert_eq!(indices[0], 0);
+    assert_eq!(indices[1], 1);
+    assert_eq!(indices[2], 2);
+    assert_eq!(indices[3], 6);
+    assert_eq!(indices[4], 7);
+    assert_eq!(indices[5], 8);
+}
+
+#[test]
+fn test_normalise_sample() {
+    let path = (PathBuf::from("unit_test_data/4-sample0_grn.dat"), PathBuf::from("unit_test_data/4-sample0_red.dat"));
+    let data = normalise_sample(&path).expect("Error normalising sample...");
+    assert_eq!(data.len(), 50);
+    assert_eq!(data[0].len(), 2);
+    assert_eq!(data[1].len(), 2);
+}
+
+#[test]
+fn test_vec_transpose() {
+    let data: Vec<u8> = (0..20).collect();
+    let transposed = vec_transpose(data, 5);
+    assert_eq!(transposed.len(), 20);
+    assert_eq!(transposed[0], 0);
+    assert_eq!(transposed[1], 1);
+    assert_eq!(transposed[2], 10);
+    assert_eq!(transposed[3], 11);
+    assert_eq!(transposed[4], 2);
+    assert_eq!(transposed[5], 3);
+    assert_eq!(transposed[6], 12);
+    assert_eq!(transposed[7], 13);
+    assert_eq!(transposed[8], 4);
+    assert_eq!(transposed[9], 5);
+    assert_eq!(transposed[10], 14);
+    assert_eq!(transposed[11], 15);
+    assert_eq!(transposed[12], 6);
+    assert_eq!(transposed[13], 7);
+    assert_eq!(transposed[14], 16);
+    assert_eq!(transposed[15], 17);
+    assert_eq!(transposed[16], 8);
+    assert_eq!(transposed[17], 9);
+    assert_eq!(transposed[18], 18);
+    assert_eq!(transposed[19], 19);
+}
+
+#[test]
+fn test_normalise_data_from_file_chunks() {
+    let path = (PathBuf::from("unit_test_data/4-sample0_grn.dat"), PathBuf::from("unit_test_data/4-sample0_red.dat"));
+    let chunks = vec![vec![path]];
+    let data = normalise_data_from_file_chunks(chunks, 0);
+    assert_eq!(data.len(), 1);
+    assert_eq!(data[0].len(), 50);
+    assert_eq!(data[0][0].len(), 2);
+    assert_eq!(data[0][1].len(), 2);
 }
